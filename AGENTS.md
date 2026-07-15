@@ -2,7 +2,7 @@
 
 ## 目的
 
-- この `AGENTS.md` の内容を正本として、Python 開発を機械的に検証するスキルの実装を生成する
+- この `AGENTS.md` の内容を正本として、Python 開発を安全に設計・実装し、機械的に検証するスキルの実装を生成する
 
 ## 配布物
 
@@ -21,11 +21,78 @@
 ## 概要
 
 - Python 開発環境として有用なツールの使用を推奨する
-- 機械的検証を手厚くサポートすることで、AI コーディングエージェントの作業品質の底上げを狙う
+- 変更設計、境界検証、resource lifecycle、隔離 test、機械的検証を一体として扱うことで、AI コーディングエージェントの作業品質の底上げを狙う
 - プロジェクトが宣言する Python のバージョン、仮想環境、依存関係管理方法、ツール設定を優先する。Python のバージョンが宣言されていない場合は Python 3.11 以上を使用する
 - Ruff、mypy、pytest-timeout が未導入の場合は、既存の開発用 dependency group や requirements file へ追加する。依存関係管理方法がない場合は、リポジトリ内の `.venv` に pip で導入し、グローバル環境を変更しない
 - 作業中は必要に応じて自動修正を使用してよいが、完了前にはファイルを書き換えないモードで fresh な検証を実行する。実行できなかった検証を成功として扱わず、実行した command、結果、未実行の理由を最終報告に残す
 - 対象 path や test command を固定せず、設定ファイル、package 構成、既存の開発手順を調査して決定する
+
+## 変更設計
+
+### goal
+
+- リポジトリの指示、正本仕様、既存 architecture、公開契約を調べ、要求を満たす最小限の変更に留める
+- module、class、function の責務と入出力を明確にし、CLI、web、job などの entrypoint や framework adapter は引数解釈と委譲を中心とする薄い境界に保つ
+- 複数箇所で実際に共有される処理は、既存の package 境界に沿った共通 module へ集約する
+- import path、公開 symbol、CLI、設定・永続化 schema、package layout などの公開契約を変更する場合は、利用側と互換性への影響を確認する
+
+### non-goal
+
+- 特定の framework、entrypoint file、共通 module 名、`src` layout を全 project へ強制すること
+- 将来の再利用を予測した抽象化、要求外の大規模 refactor、無関係な code の整理を同時に行うこと
+- 最小変更を理由に、判明した correctness、security、resource leak の不具合を隠すこと
+
+## Python coding
+
+### goal
+
+- project 固有の style を優先し、未定義の場合は PEP 8 と Python ecosystem の標準的な命名に従う。text file は tool や既存規約に別指定がなければ UTF-8 BOM なしで扱う
+- 新規・変更する公開 API と非自明な function・class には正確な型 hint を付け、非公開の module・class 識別子は既存の公開方針に反しない範囲で `_` から始める
+- 公開 API と意図・副作用・失敗条件が code だけでは読み取りにくい対象には、project 既存 style の簡潔な docstring を付ける。signature から自明な情報を繰り返さない
+- comment は処理の逐語説明ではなく、理由、invariant、trade-off、workaround、外部契約など、code だけでは残らない意図を説明する
+- 循環 import は module 分割、依存方向、責務配置の見直しで解消する。`TYPE_CHECKING` は構造的な解消が適切でない場合に限定する
+
+### non-goal
+
+- relative import または absolute import の一方、特定の docstring style、comment・log の言語、`from __future__ import annotations` の使用可否を一律に強制すること
+- 変更と無関係な既存 code へ型 hint、docstring、comment を一括追加すること
+- 自明な code block ごとに comment を追加し、実装と同期しない説明を増やすこと
+
+## 入力境界・global state・外部 process
+
+### goal
+
+- config、serialized data、外部 command の出力、file、network response などの入力境界で、型、必須 field、許容値、空値、path の所属を明示的に検証する。契約にない欠落や不正値を default で黙って補わない
+- OS・library の低水準例外は、application 境界で利用者が対処できる domain error に変換し、原因の exception chain、対象 path・argv・設定などの診断情報を保持する
+- cwd、環境変数、signal handler、global・context-local state、lock を一時変更する処理は context manager または `try/finally` で復元・解放する
+- subprocess は原則として argv の list で起動し、Python child process には選択済み interpreter または `sys.executable` を使う。`cwd`、環境、text/binary、標準入出力、exit code、timeout の契約を明示し、失敗時に stdout・stderr を調査できるようにする
+- thread、process、subprocess、process group を開始した code が lifecycle と cleanup を所有する。timeout・中断・部分初期化を含む全終了経路で、残存 process と resource を確認する
+- 並行実行される state 更新、lock、path 予約には atomic・排他的な操作を使用し、競合時の一貫性を test する
+
+### non-goal
+
+- 広範な `except`、無言の fallback、根拠のない retry で原因を隠すこと
+- 必要性を確認せず `shell=True`、process-global な cwd・環境変更、強制終了を使用すること
+- timeout 値を延ばすだけで deadlock、I/O 待ち、cleanup 不備を回避すること
+
+## test 設計
+
+### goal
+
+- まず project が責任を持つ決定論的な制御 logic と公開契約を test し、外部 service や生成 AI の品質そのものと分離する
+- filesystem、repository、HOME、cwd、環境変数、設定を `tmp_path` などの一時領域と fixture・monkeypatch で隔離し、利用者の global state、hook、署名設定、credential、既存 file に依存または作用しないようにする
+- 外部 command・service の実動作が test の目的でなければ fake・stub を使う。呼び出し境界自体が project の責務である場合は、side effect と費用を抑えた限定的な integration test も用意する
+- network access、有料 API、subscription quota を消費する backend は、明示的な許可と隔離された integration test 設計がない限り自動 test で使用しない
+- package・import・公開 symbol を変更した場合は、source checkout だけでなく install 後相当の layout でも import と resource 参照を検証する。schema、定数、型などの契約定義は正本を参照し、test 用 copy を別の定義として増やさない
+- invalid input、境界値、error、timeout、中断、部分初期化、cleanup、並行競合を変更内容に応じて test し、exit code、stdout・stderr、永続 state、残存 resource を外部契約として確認する
+- optional な外部 executable を必要とする test は、存在を検査して具体的な理由付きで skip してよい。ただし fake で検証できる必須 logic や required validation を skip で代用しない
+
+### non-goal
+
+- 外部 service、LLM、第三者 CLI 自体の品質・安定性を project の自動 test で保証すること
+- fake だけで実 integration 契約を検証済みとすること、または全 test で実 service を起動すること
+- test の順序、利用者環境、外部 network、過去の生成物に依存する test を残すこと
+- skip された optional integration test を実行成功として扱うこと
 
 ## Ruff
 
