@@ -1,11 +1,11 @@
 ---
 name: python-dev-skill
-description: Python プロジェクトの開発、修正、レビュー、開発環境整備で、プロジェクトが宣言する Python・仮想環境・依存関係管理・ツール設定を優先し、PEP 8、型 hint、docstring、Python subprocess、pytest の隔離と package test を扱い、Ruff、mypy、pytest-timeout、Python development mode、ResourceWarning 検査を適用する。Python code、Python package、pytest、Python child process、Python 向け品質ゲートを変更または検証するときに使用する。
+description: Python プロジェクトの開発、修正、レビュー、開発環境整備で、プロジェクトが宣言する Python・仮想環境・依存関係管理・ツール設定を優先し、pytest の隔離と package test を扱い、Ruff、mypy、pytest-timeout、Python development mode、ResourceWarning 検査を適用する。Python code、Python package、pytest、Python 向け品質ゲートを変更または検証するときに使用する。
 ---
 
-# Python 固有の開発規約と品質ゲートを適用する
+# Python 固有の品質ゲートを適用する
 
-対象 project の Python 構成を優先し、Python code と package に適した実装規約、test、検査ツールを適用する。完了前の Ruff、mypy、test runner は現在の worktree に対して fresh に実行する。
+対象 project の Python 構成を優先し、Python code と package に適した test と検査ツールを適用する。完了前の Ruff、mypy、test runner は現在の worktree に対して fresh に実行する。
 
 ## 1. Python 環境と検査対象を特定する
 
@@ -16,29 +16,14 @@ description: Python プロジェクトの開発、修正、レビュー、開発
 - 依存関係管理方法がない場合は repository 内の `.venv` に pip で導入し、global environment を変更しない。
 - 選択した interpreter から `python -m ruff`、`python -m mypy`、test runner を起動する。
 
-## 2. Python code を実装する
-
-- project 固有の style を優先し、未定義なら PEP 8 と Python ecosystem の標準的な命名に従う。
-- 新規・変更する公開 API と非自明な function・class に正確な型 hint を付ける。非公開の module・class 識別子は既存の公開方針に反しない範囲で `_` から始める。
-- 公開 API と、意図・副作用・失敗条件が code だけでは読み取りにくい対象に、既存 style の簡潔な docstring を付ける。signature の情報を繰り返さない。
-- `TYPE_CHECKING` を runtime の循環 import を隠すためだけに使用しない。
-- relative/absolute import、docstring style、`from __future__ import annotations` の方針を一律に強制しない。
-- 変更と無関係な既存 code へ型 hint や docstring を一括追加しない。
-
-## 3. Python subprocess を起動する
-
-- `subprocess` には原則として argv の list を渡す。Python child process には選択済み interpreter または `sys.executable` を使う。
-- `cwd`、`env`、`text` または binary mode、標準入出力、`returncode` または `check`、`timeout` を呼び出しごとに明示する。
-- 必要性を確認せず `shell=True` を使用しない。
-
-## 4. pytest と Python package を検証する
+## 2. pytest と Python package を検証する
 
 - pytest では filesystem、HOME、cwd、環境変数を `tmp_path`、fixture、monkeypatch で隔離する。
 - Python package、import path、公開 symbol、package data を変更した場合は、source checkout だけでなく install 後相当の layout でも import と resource 参照を検証する。
 - optional な外部 executable を必要とする pytest は存在を検査し、具体的な理由を指定した `pytest.mark.skipif` で skip する。
 - source checkout からの import 成功だけで、install 後の package 構成を検証済みとしない。
 
-## 5. Ruff を実行する
+## 3. Ruff を実行する
 
 - project の Ruff 設定を使い、lint、未使用 import、import 順序、format を検査する。
 - 変更中は変更した first-party path を中心に検査する。
@@ -52,7 +37,7 @@ python -m ruff check <first-party targets>
 python -m ruff format --check <first-party targets>
 ```
 
-## 6. mypy を実行する
+## 4. mypy を実行する
 
 - project の mypy 設定と package 構成から検査対象を決め、型の不整合、到達不能な前提、不適切な `Any` の流出、無効になった ignore を検出する。
 - 変更中は変更した module とその利用側を検査する。
@@ -67,14 +52,14 @@ python -m ruff format --check <first-party targets>
 python -m mypy <first-party targets or packages>
 ```
 
-## 7. pytest-timeout を有効にする
+## 5. pytest-timeout を有効にする
 
 - pytest を使用する project では、停止、deadlock、終了しない外部 process を検出するため、pytest-timeout で保守的な global timeout を設定する。
 - timeout 値は正常時の実測時間と実行環境の揺らぎを考慮して決める。正当に長い test には、理由を残して test 単位の timeout を設定する。
 - 変更中の focused test と完了前の full test の両方で pytest-timeout を有効にする。
 - pytest を使用していない project へ pytest または pytest-timeout を導入しない。
 
-## 8. development mode で ResourceWarning を検査する
+## 6. development mode で ResourceWarning を検査する
 
 完了前の full test を、Python development mode と `ResourceWarning` のエラー化を有効にして実行する。pytest の標準的な例は次のとおりとする。
 

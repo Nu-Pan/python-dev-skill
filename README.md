@@ -1,14 +1,12 @@
 # python-dev-skill
 
-Python プロジェクトの開発時に、Python 固有の coding 規約、subprocess、pytest・package test、静的解析、型検査、停止検知、resource leak 検査を適用する Codex スキルです。
+Python プロジェクトの開発時に、pytest・package test、静的解析、型検査、停止検知、resource leak 検査を適用する Codex スキルです。
 
 対象プロジェクトが宣言する Python のバージョン、仮想環境、依存関係管理方法、既存のツール設定を優先し、プロジェクトの構成に合わせて検査対象とコマンドを決定します。
 
 ## 主な機能
 
 - 宣言済みの Python、仮想環境、依存関係管理方法、ツール設定の優先
-- PEP 8、型 hint、docstring、`TYPE_CHECKING`、import 方針の取り扱い
-- `sys.executable` と `subprocess` の Python 固有オプションの取り扱い
 - pytest fixture による隔離と、install 後相当の Python package test
 - Ruff による lint、import、format の検査
 - mypy による first-party code の型検査

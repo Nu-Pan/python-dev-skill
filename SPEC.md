@@ -8,31 +8,6 @@
 - 完了前には Ruff、mypy、test runner を fresh に実行する
 - 検査対象の Python package、module、test command は、設定ファイル、package 構成、既存の開発手順を調査して決定する
 
-## Python coding
-
-### goal
-
-- project 固有の style を優先し、未定義の場合は PEP 8 と Python ecosystem の標準的な命名に従う
-- 新規・変更する公開 API と非自明な function・class には正確な型 hint を付け、非公開の module・class 識別子は既存の公開方針に反しない範囲で `_` から始める
-- 公開 API と意図・副作用・失敗条件が code だけでは読み取りにくい対象には、project 既存 style の簡潔な docstring を付ける。signature から自明な情報を繰り返さない
-- `TYPE_CHECKING` を runtime の循環 import を隠すためだけに使用しない
-
-### non-goal
-
-- relative import または absolute import の一方、特定の docstring style、`from __future__ import annotations` の使用可否を一律に強制すること
-- 変更と無関係な既存 code へ型 hint や docstring を一括追加すること
-
-## Python subprocess
-
-### goal
-
-- `subprocess` には原則として argv の list を渡し、Python child process には選択済み interpreter または `sys.executable` を使う
-- `subprocess` の `cwd`、`env`、text/binary mode、標準入出力、exit code、timeout を呼び出しごとに明示する
-
-### non-goal
-
-- 必要性を確認せず `shell=True` を使用すること
-
 ## pytest と package test
 
 ### goal
