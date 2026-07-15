@@ -1,0 +1,4 @@
+interface:
+  display_name: "Python Development Quality Gates"
+  short_description: "Strengthen Python lint, typing, and test quality gates"
+  default_prompt: "Use $python-dev-skill to inspect this repository and run the appropriate Python quality gates."
