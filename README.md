@@ -1,18 +1,6 @@
 # python-dev-skill
 
-Python プロジェクトの開発時に、pytest・package test、静的解析、型検査、停止検知、resource leak 検査を適用する Codex スキルです。
-
-対象プロジェクトが宣言する Python のバージョン、仮想環境、依存関係管理方法、既存のツール設定を優先し、プロジェクトの構成に合わせて検査対象とコマンドを決定します。
-
-## 主な機能
-
-- 宣言済みの Python、仮想環境、依存関係管理方法、ツール設定の優先
-- pytest fixture による隔離と、install 後相当の Python package test
-- Ruff による lint、import、format の検査
-- mypy による first-party code の型検査
-- pytest-timeout による停止、deadlock、終了しない外部 process の検知
-- Python development mode と `ResourceWarning` のエラー化を使用した resource leak 検査
-- focused check と fresh な完了前検証の使い分け
+Python プロジェクトが宣言する Python、仮想環境、依存関係管理方法、ツール設定を優先し、構成に合わせて検査対象とコマンドを決定する Codex スキルです。pytest fixture による隔離と install 後相当の package test、Ruff、mypy、pytest-timeout、Python development mode、`ResourceWarning` 検査を、変更中の focused check と fresh な完了ゲートに分けて適用します。
 
 ## インストール
 
@@ -24,19 +12,7 @@ mkdir -p "$TARGET_REPO/.agents/skills/python-dev-skill"
 cp -R dist/python-dev-skill/. "$TARGET_REPO/.agents/skills/python-dev-skill/"
 ```
 
-インストール後の構造は次のようになります。
-
-```text
-<target-repository>/
-└── .agents/
-    └── skills/
-        └── python-dev-skill/
-            ├── SKILL.md
-            └── agents/
-                └── openai.yaml
-```
-
-インストール後に Codex のセッションを開始し、明示的に使用する場合はプロンプトで `$python-dev-skill` を指定します。
+これにより、`SKILL.md` と `agents/openai.yaml` が `<target-repository>/.agents/skills/python-dev-skill/` に配置されます。インストール後に Codex のセッションを開始し、明示的に使用する場合はプロンプトで `$python-dev-skill` を指定します。
 
 ```text
 $python-dev-skill を使って、このリポジトリの変更を実装し、適切な Python 品質ゲートを実行してください。
